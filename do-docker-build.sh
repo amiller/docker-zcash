@@ -4,16 +4,27 @@
 
 set -eu
 
-TAG="$(git rev-parse --abbrev-ref HEAD)"
-CTX="${TMPDIR}/Docker-ctx-${TAG}"
+ZCASH_SRC='.'
+
+TAG="$(git rev-parse --abbrev-ref HEAD)@$(git rev-parse HEAD | head -c 6)"
+CTX="${TMPDIR:-/tmp}/Docker-ctx-${TAG}"
 DOCKERSRC="$(dirname "$(readlink -f "$0")")/Dockerfile"
 
 
-set -x
-[ -d "$CTX" ] && rm -rf "$CTX"
-mkdir "$CTX"
-cp "$DOCKERSRC" "${CTX}/Dockerfile"
-cp -r "$(readlink -f .)" "${CTX}/zerocashd"
+if [ -d "$CTX" ]
+then
+    echo "Removing old docker context: $CTX"
+    rm -rf "$CTX"
+fi
 
-exec docker build --tag "$TAG" "$CTX"
+echo "===***=== Creating docker context: $CTX ===***==="
+mkdir -v "$CTX"
+cp -v "$DOCKERSRC" "${CTX}/Dockerfile"
+rsync --recursive --exclude '.git' "$(readlink -f .)/" "${CTX}/zerocashd"
+
+echo "===***=== Building Docker image $TAG ===***==="
+docker build --tag "$TAG" "$CTX"
+
+echo "===***=== Running Docker image $TAG ===***==="
+exec docker run "$TAG"
 
