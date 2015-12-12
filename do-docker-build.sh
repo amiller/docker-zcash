@@ -37,7 +37,7 @@ fi
 
 mkdir -v "$CTX"
 cp -v "$DOCKERSRC" "${CTX}/Dockerfile"
-rsync --recursive --exclude '.git' "$(readlink -f .)/" "${CTX}/zerocashd"
+rsync -a --recursive --exclude '.git' "$(readlink -f .)/" "${CTX}/zerocashd"
 
 echo "===***=== Building Docker image $TAG ===***==="
 docker build --tag "$TAG" "$CTX"
